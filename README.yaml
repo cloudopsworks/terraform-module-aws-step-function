@@ -1,4 +1,4 @@
-name: Terraform Transit Gateway Module
+name: Terraform AWS Step Function Module
 #logo: logo/logo.jpg
 
 license: "APACHE2"
@@ -8,23 +8,115 @@ copyrights:
     url: "https://cloudops.works"
     year: "2024"
 
-github_repo: cloudopsworks/terraform-module-aws-vpc-setup
+github_repo: cloudopsworks/terraform-module-aws-step-function
 
 description: |-
-  VPC Module for setting up transit gateway with ResourceAccessMananger support.
+  AWS Step Function Module for creating and managing Step Functions with support for activities, IAM roles, KMS encryption, 
+  logging configuration, and tracing capabilities.
 
 # Introduction to the project
-#introduction: |-
-#  This is an introduction.
+introduction: |-
+  This Terraform module provides comprehensive management of AWS Step Functions, including:
+  - Step Function state machine creation with Standard and Express workflows
+  - Activity creation with encryption support
+  - IAM role and policy management
+  - KMS encryption configuration
+  - CloudWatch logging integration
+  - X-Ray tracing configuration
 
 # How to use this project
-#usage: |-
+usage: |-
+  Module configuration supports the following main components:
+  - name_prefix: Prefix for resource names
+  - encryption: KMS key configuration
+    - create: Boolean to create new KMS key
+    - enabled: Enable encryption
+    - deletion_window: Key deletion window in days
+    - enable_key_rotation: Enable key rotation
+    - rotation_period: Key rotation period in days
+  - settings:
+    - is_express: Boolean for Express workflow
+    - publish: Enable versioning
+    - definition: Step Function state machine definition
+    - logging: CloudWatch logging configuration
+    - tracing: X-Ray tracing configuration
+    - iam: IAM role policy statements
 
 # Example usage
-#examples: |-
+examples: |-
+  ```hcl
+  # terragrunt.hcl
+  include {
+    path = find_in_parent_folders()
+  }
+
+  terraform {
+    source = "git::https://github.com/cloudopsworks/terraform-module-aws-step-function.git?ref=v1.0.0"
+  }
+
+  inputs = {
+    name_prefix = "myapp"
+    encryption = {
+      create = true
+      enabled = true
+      deletion_window = 7
+      enable_key_rotation = true
+      rotation_period = 365
+    }
+    settings = {
+      is_express = false
+      publish = true
+      definition = {
+        StartAt = "FirstState"
+        States = {
+          FirstState = {
+            Type = "Pass"
+            End = true
+          }
+        }
+      }
+      logging = {
+        enabled = true
+        level = "ERROR"
+        retention_in_days = 30
+      }
+      tracing = {
+        enabled = true
+      }
+    }
+  }
+  ```
 
 # How to get started quickly
-#quickstart: |-
+quickstart: |-
+  1. Add the module to your Terraform configuration:
+     ```hcl
+     module "step_function" {
+       source = "cloudopsworks/step-function/aws"
+       version = "1.0.0"
+
+       name_prefix = "myapp"
+       settings = {
+         definition = {
+           StartAt = "HelloWorld"
+           States = {
+             HelloWorld = {
+               Type = "Pass"
+               End = true
+             }
+           }
+         }
+       }
+     }
+     ```
+  2. Initialize Terraform:
+     ```bash
+     terraform init
+     ```
+  3. Apply the configuration:
+     ```bash
+     terraform apply
+     ```
 
 include:
   - "docs/targets.md"
