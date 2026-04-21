@@ -26,7 +26,7 @@ activities: {}
 #   is_express: false               # (Optional) Workflow type: true = EXPRESS, false = STANDARD. Default: false
 #   publish: null                   # (Optional) Enable state machine versioning. Default: null
 #   definition: {}                  # (Optional) State machine definition as a YAML object or JSON string.
-#   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds for the state machine. Default: null
+#   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds for the state machine. Default: null. Only applies when encryption.create is true.
 #   logging:
 #     enabled: false                # (Optional) Enable CloudWatch Logs integration. Default: false
 #     level: "ERROR"                # (Optional) Log verbosity: ALL | ERROR | FATAL | OFF. Default: "ERROR"

@@ -7,6 +7,10 @@
 #     Distributed Under Apache v2.0 License
 #
 
+locals {
+  sfn_name = format("%s-%s", var.name_prefix, local.system_name_short)
+}
+
 resource "aws_kms_key" "this" {
   count                   = var.encryption.create ? 1 : 0
   description             = "KMS Key for Step Function Activities"
@@ -27,11 +31,11 @@ resource "aws_sfn_activity" "this" {
   for_each = var.activities
   name     = try(each.value.name, format("%s-%s", each.value.name_prefix, local.system_name_short))
   dynamic "encryption_configuration" {
-    for_each = try(each.value.encryption.enabled, false) ? [1] : []
+    for_each = try(each.value.encryption.enabled, false) || var.encryption.create ? [1] : []
     content {
-      kms_key_id                        = try(each.value.encryption.kms_key_arn, aws_kms_key.this[0].arn, null)
-      type                              = try(each.value.encryption.aws_kms, false) ? "CUSTOMER_MANAGED_KMS_KEY" : "AWS_KMS_KEY"
-      kms_data_key_reuse_period_seconds = each.value.encryption.reuse_period_seconds
+      kms_key_id                        = try(each.value.encryption.aws_kms, false) ? null : try(each.value.encryption.kms_key_arn, aws_kms_key.this[0].arn, null)
+      type                              = try(each.value.encryption.aws_kms, false) ? "AWS_KMS_KEY" : (try(each.value.encryption.kms_key_arn, aws_kms_key.this[0].arn, "") != "" ? "CUSTOMER_MANAGED_KMS_KEY" : "AWS_KMS_KEY")
+      kms_data_key_reuse_period_seconds = try(each.value.encryption.reuse_period_seconds, var.settings.kms_reuse_period_seconds, null)
     }
   }
   tags = merge(
@@ -47,7 +51,7 @@ resource "aws_sfn_state_machine" "this" {
   publish    = try(var.settings.publish, null)
   definition = try(yamlencode(var.settings.definition), var.settings.definition)
   dynamic "encryption_configuration" {
-    for_each = try(var.encryption.create, false) ? [1] : []
+    for_each = var.encryption.create ? [1] : []
     content {
       kms_key_id                        = aws_kms_key.this[0].arn
       type                              = "CUSTOMER_MANAGED_KMS_KEY"
@@ -69,6 +73,13 @@ resource "aws_sfn_state_machine" "this" {
     }
   }
   tags = local.all_tags
+
+  lifecycle {
+    precondition {
+      condition     = try(var.settings.definition, null) != null
+      error_message = "settings.definition must be provided — an empty state machine definition is not valid."
+    }
+  }
 }
 
 resource "aws_cloudwatch_log_group" "this" {

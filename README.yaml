@@ -71,15 +71,15 @@ usage: |-
   #     encryption:
   #       enabled: false             # (Optional) Enable encryption for this activity. Default: false
   #       reuse_period_seconds: 60   # (Optional) KMS data key reuse period in seconds. Default: null
-  #       aws_kms: false             # (Optional) Use AWS-owned KMS key. Default: false
+  #       aws_kms: false             # (Optional) Use AWS managed key (AWS_KMS_KEY); false = customer-managed. Default: false
   #       kms_key_arn: ""            # (Optional) ARN of an existing KMS key
   activities: {}
 
   # settings: # (Optional) State machine configuration. Default: {}
   #   is_express: false               # (Optional) EXPRESS workflow; false = STANDARD. Default: false
   #   publish: null                   # (Optional) Enable state machine versioning. Default: null
-  #   definition: {}                  # (Optional) State machine definition as YAML object or JSON string
-  #   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds. Default: null
+  #   definition: {}                  # (Required) State machine definition as YAML object or JSON string
+  #   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds. Default: null. Only applies when encryption.create is true.
   #   logging:
   #     enabled: false                # (Optional) Enable CloudWatch logging. Default: false
   #     level: "ERROR"                # (Optional) ALL | ERROR | FATAL | OFF. Default: "ERROR"
