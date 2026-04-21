@@ -6,9 +6,6 @@
 #       WebSite: https://cloudops.works
 #     Distributed Under Apache v2.0 License
 #
-locals {
-  sfn_name = format("%s-%s-role", var.name_prefix, local.system_name_short)
-}
 
 data "aws_caller_identity" "current" {}
 
@@ -62,7 +59,7 @@ data "aws_iam_policy_document" "sfn_policy" {
 }
 
 resource "aws_iam_role" "this" {
-  name               = local.sfn_name
+  name               = format("%s-role", local.sfn_name)
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   tags               = local.all_tags
 }

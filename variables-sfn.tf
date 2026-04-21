@@ -43,12 +43,15 @@ variable "encryption" {
 # settings:
 #   is_express: true | false # (optional) default is false
 #   publish: true | false # (optional) default is null
-#   definition: "" | {} # (optional) JSON String or YAML definition of the Step Function
-#   kms_reuse_period_seconds: 60 # (optional) default is null
+#   definition: "" | {} # (Required) JSON String or YAML definition of the Step Function
+#   kms_reuse_period_seconds: 60 # (optional) default is null - only applies when encryption.create is true
 #   logging:
 #     enabled: true | false # (optional) default is false
 #     level: "ALL" | "ERROR" | "FATAL" | "OFF" # (optional) default is "ERROR"
 #     include_execution_data: true | false # (optional) default is false
+#     retention_in_days: 90 # (optional) CloudWatch log group retention in days, default is 90
+#   tracing:
+#     enabled: true | false # (optional) Enable AWS X-Ray tracing for state machine executions. default is false
 #   iam:
 #     policy_statements: # (optional) list of IAM policy statements to attach to the Step Function role
 #       - sid: "StatementID" # (optional) unique identifier for the statement
