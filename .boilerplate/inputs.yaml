@@ -1,18 +1,47 @@
 # Module configuration
-# Required variables
-{{- range .requiredVariables }}
-{{- if ne .Name "org"}}
-# Description {{ .Description }} , Type: {{ .Type }}
-{{ .Name }}: {{ .DefaultValuePlaceholder }}
-{{- end }}
 
-{{- end }}
-# Optional variables
-{{- range .optionalVariables }}
-{{- if ne .Name "is_hub" "spoke_def" "extra_args" }}
-# Description {{ .Description }} , Type: {{ .Type }}
-#{{ .Name }}: {{ .DefaultValue }}
-{{- end }}
+# name_prefix: "myapp" # (Required) Prefix for the Step Function and related resource names.
+name_prefix: ""
 
-{{- end }}
+# encryption: # (Optional) KMS encryption configuration for the Step Function and activities. Default: {}
+#   create: false              # (Optional) Create a new Customer Managed KMS key. Default: false
+#   enabled: true              # (Optional) Enable the KMS key (is_enabled). Default: true
+#   deletion_window: 30        # (Optional) KMS key deletion window in days (7-30). Default: 30
+#   enable_key_rotation: true  # (Optional) Enable automatic KMS key rotation. Default: true
+#   rotation_period: 90        # (Optional) KMS key rotation period in days (90-2560). Default: 90
+encryption: {}
 
+# activities: # (Optional) Map of Step Function activities to create. Default: {}
+#   my_activity:                     # (Required) Arbitrary key name for the activity map entry
+#     name_prefix: "my-activity"     # (Optional) Prefix for the activity name; a system suffix is appended
+#     name: "my-activity-name"       # (Optional) Fully explicit activity name, overrides name_prefix
+#     encryption:
+#       enabled: false               # (Optional) Enable encryption for this specific activity. Default: false
+#       reuse_period_seconds: 60     # (Optional) KMS data key reuse period in seconds. Default: null
+#       aws_kms: false               # (Optional) Use AWS-owned KMS key (false = customer-managed). Default: false
+#       kms_key_arn: ""              # (Optional) ARN of an existing KMS key; if omitted, uses module-level key
+activities: {}
+
+# settings: # (Optional) Step Function state machine configuration. Default: {}
+#   is_express: false               # (Optional) Workflow type: true = EXPRESS, false = STANDARD. Default: false
+#   publish: null                   # (Optional) Enable state machine versioning. Default: null
+#   definition: {}                  # (Optional) State machine definition as a YAML object or JSON string.
+#   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds for the state machine. Default: null
+#   logging:
+#     enabled: false                # (Optional) Enable CloudWatch Logs integration. Default: false
+#     level: "ERROR"                # (Optional) Log verbosity: ALL | ERROR | FATAL | OFF. Default: "ERROR"
+#     include_execution_data: false # (Optional) Include execution input/output data in logs. Default: false
+#     retention_in_days: 90         # (Optional) CloudWatch log group retention period in days. Default: 90
+#   tracing:
+#     enabled: false                # (Optional) Enable AWS X-Ray tracing for executions. Default: false
+#   iam:
+#     policy_statements:            # (Optional) Additional inline IAM policy statements for the execution role.
+#       - sid: "StatementID"        # (Optional) Unique statement identifier
+#         effect: "Allow"           # (Optional) Effect: Allow | Deny. Default: "Allow"
+#         actions: []               # (Optional) List of IAM action strings (e.g. "lambda:InvokeFunction")
+#         resources: []             # (Optional) List of resource ARNs the actions apply to
+#         conditions:               # (Optional) List of IAM condition blocks
+#           - test: "StringEquals"  # (Optional) Condition operator (e.g. StringEquals, ArnLike)
+#             variable: ""          # (Optional) Condition key (e.g. "aws:SourceArn")
+#             values: []            # (Optional) List of condition values
+settings: {}
