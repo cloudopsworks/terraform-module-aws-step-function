@@ -8,28 +8,23 @@
   -->
 [![README Header][readme_header_img]][readme_header_link]
 
-[![cloudopsworks][logo]](https://cloudops.works/)
+[![cloudopsworks][logo]](https://cloudopsworks.co/)
 
-# Terraform AWS Step Function Module
+# Terraform AWS Step Function Module [![Latest Release](https://img.shields.io/github/release/cloudopsworks/terraform-module-aws-step-function.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-module-aws-step-function/releases/latest) [![Last Updated](https://img.shields.io/github/last-commit/cloudopsworks/terraform-module-aws-step-function.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-module-aws-step-function/commits)
 
 
-AWS Step Function Module for creating and managing Step Functions with support for activities, IAM roles, KMS encryption, 
-logging configuration, and tracing capabilities.
+AWS Step Function Module for creating and managing Step Functions with support for activities,
+IAM roles, KMS encryption, CloudWatch logging, and X-Ray tracing configurations.
 
 
 ---
 
 This project is part of our comprehensive approach towards DevOps Acceleration. 
 [<img align="right" title="Share via Email" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/ios-mail.svg"/>][share_email]
-[<img align="right" title="Share on Google+" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-googleplus.svg" />][share_googleplus]
 [<img align="right" title="Share on Facebook" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-facebook.svg" />][share_facebook]
 [<img align="right" title="Share on Reddit" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-reddit.svg" />][share_reddit]
 [<img align="right" title="Share on LinkedIn" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-linkedin.svg" />][share_linkedin]
-[<img align="right" title="Share on Twitter" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-twitter.svg" />][share_twitter]
-
-
-[![Terraform Open Source Modules](https://docs.cloudops.works/images/terraform-open-source-modules.svg)][terraform_modules]
-
+[<img align="right" title="Share on X" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-twitter.svg" />][share_twitter]
 
 
 It's 100% Open Source and licensed under the [APACHE2](LICENSE).
@@ -50,12 +45,13 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 ## Introduction
 
 This Terraform module provides comprehensive management of AWS Step Functions, including:
-- Step Function state machine creation with Standard and Express workflows
-- Activity creation with encryption support
-- IAM role and policy management
-- KMS encryption configuration
-- CloudWatch logging integration
-- X-Ray tracing configuration
+
+- **State Machine**: Create Standard or Express workflow state machines with a JSON/YAML definition.
+- **Activities**: Create Step Function activities with optional per-activity KMS encryption.
+- **IAM**: Automatically creates a scoped IAM execution role with optional additional inline policy statements.
+- **KMS Encryption**: Optionally creates a Customer Managed KMS key shared by the state machine and activities.
+- **CloudWatch Logging**: Configures a dedicated log group with configurable retention and log verbosity.
+- **X-Ray Tracing**: Enables distributed tracing for state machine executions.
 
 ## Usage
 
@@ -64,97 +60,204 @@ This Terraform module provides comprehensive management of AWS Step Functions, i
 Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-module-aws-step-function/releases).
 
 
-Module configuration supports the following main components:
-- name_prefix: Prefix for resource names
-- encryption: KMS key configuration
-  - create: Boolean to create new KMS key
-  - enabled: Enable encryption
-  - deletion_window: Key deletion window in days
-  - enable_key_rotation: Enable key rotation
-  - rotation_period: Key rotation period in days
-- settings:
-  - is_express: Boolean for Express workflow
-  - publish: Enable versioning
-  - definition: Step Function state machine definition
-  - logging: CloudWatch logging configuration
-  - tracing: X-Ray tracing configuration
-  - iam: IAM role policy statements
+Bootstrap a new deployment using the Terragrunt scaffold workflow:
 
-## Quick Start
+```sh
+# 1. Create and enter the target deployment directory
+mkdir -p <environment>/<region>/<spoke>/step-function
+cd <environment>/<region>/<spoke>/step-function
 
-1. Add the module to your Terraform configuration:
-   ```hcl
-   module "step_function" {
-     source = "cloudopsworks/step-function/aws"
-     version = "1.0.0"
+# 2. Scaffold the module (generates terragrunt.hcl, inputs.yaml, and local-tags.json)
+terragrunt scaffold github.com/cloudopsworks/terraform-module-aws-step-function
 
-     name_prefix = "myapp"
-     settings = {
-       definition = {
-         StartAt = "HelloWorld"
-         States = {
-           HelloWorld = {
-             Type = "Pass"
-             End = true
-           }
-         }
-       }
-     }
-   }
-   ```
-2. Initialize Terraform:
-   ```bash
-   terraform init
-   ```
-3. Apply the configuration:
-   ```bash
-   terraform apply
-   ```
+# 3. Edit inputs.yaml with deployment-specific values
+vi inputs.yaml
 
+# 4. Plan and apply
+terragrunt plan
+terragrunt apply
+```
 
-## Examples
+**`inputs.yaml`** (generated by scaffold — fill in required values):
+
+```yaml
+# name_prefix: "myapp" # (Required) Prefix for the Step Function and related resource names.
+name_prefix: ""
+
+# encryption: # (Optional) KMS encryption configuration for the Step Function and activities. Default: {}
+#   create: false              # (Optional) Create a new Customer Managed KMS key. Default: false
+#   enabled: true              # (Optional) Enable the KMS key. Default: true
+#   deletion_window: 30        # (Optional) KMS key deletion window in days (7-30). Default: 30
+#   enable_key_rotation: true  # (Optional) Enable automatic KMS key rotation. Default: true
+#   rotation_period: 90        # (Optional) KMS key rotation period in days (90-2560). Default: 90
+encryption: {}
+
+# activities: # (Optional) Map of Step Function activities to create. Default: {}
+#   my_activity:
+#     name_prefix: "my-activity"   # (Optional) Prefix for the activity name; system suffix is appended
+#     name: "my-activity-name"     # (Optional) Explicit name, overrides name_prefix
+#     encryption:
+#       enabled: false             # (Optional) Enable encryption for this activity. Default: false
+#       reuse_period_seconds: 60   # (Optional) KMS data key reuse period in seconds. Default: null
+#       aws_kms: false             # (Optional) Use AWS-owned KMS key. Default: false
+#       kms_key_arn: ""            # (Optional) ARN of an existing KMS key
+activities: {}
+
+# settings: # (Optional) State machine configuration. Default: {}
+#   is_express: false               # (Optional) EXPRESS workflow; false = STANDARD. Default: false
+#   publish: null                   # (Optional) Enable state machine versioning. Default: null
+#   definition: {}                  # (Optional) State machine definition as YAML object or JSON string
+#   kms_reuse_period_seconds: null  # (Optional) KMS data key reuse period in seconds. Default: null
+#   logging:
+#     enabled: false                # (Optional) Enable CloudWatch logging. Default: false
+#     level: "ERROR"                # (Optional) ALL | ERROR | FATAL | OFF. Default: "ERROR"
+#     include_execution_data: false # (Optional) Include execution data in logs. Default: false
+#     retention_in_days: 90         # (Optional) Log retention in days. Default: 90
+#   tracing:
+#     enabled: false                # (Optional) Enable X-Ray tracing. Default: false
+#   iam:
+#     policy_statements:            # (Optional) Additional inline IAM policy statements
+#       - sid: "StatementID"
+#         effect: "Allow"
+#         actions: []
+#         resources: []
+#         conditions:
+#           - test: "StringEquals"
+#             variable: ""
+#             values: []
+settings: {}
+```
+
+**`terragrunt.hcl`** (generated by scaffold):
 
 ```hcl
-# terragrunt.hcl
-include {
+locals {
+  local_vars  = yamldecode(file("./inputs.yaml"))
+  spoke_vars  = yamldecode(file(find_in_parent_folders("spoke-inputs.yaml")))
+  region_vars = yamldecode(file(find_in_parent_folders("region-inputs.yaml")))
+  env_vars    = yamldecode(file(find_in_parent_folders("env-inputs.yaml")))
+  global_vars = yamldecode(file(find_in_parent_folders("global-inputs.yaml")))
+
+  local_tags  = jsondecode(file("./local-tags.json"))
+  spoke_tags  = jsondecode(file(find_in_parent_folders("spoke-tags.json")))
+  region_tags = jsondecode(file(find_in_parent_folders("region-tags.json")))
+  env_tags    = jsondecode(file(find_in_parent_folders("env-tags.json")))
+  global_tags = jsondecode(file(find_in_parent_folders("global-tags.json")))
+
+  tags = merge(
+    local.global_tags,
+    local.env_tags,
+    local.region_tags,
+    local.spoke_tags,
+    local.local_tags
+  )
+}
+
+include "root" {
   path = find_in_parent_folders()
 }
 
 terraform {
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-step-function.git?ref=v1.0.0"
+  source = "github.com/cloudopsworks/terraform-module-aws-step-function?ref=<version>"
 }
 
 inputs = {
-  name_prefix = "myapp"
-  encryption = {
-    create = true
-    enabled = true
-    deletion_window = 7
-    enable_key_rotation = true
-    rotation_period = 365
-  }
-  settings = {
-    is_express = false
-    publish = true
-    definition = {
-      StartAt = "FirstState"
-      States = {
-        FirstState = {
-          Type = "Pass"
-          End = true
-        }
-      }
-    }
-    logging = {
-      enabled = true
-      level = "ERROR"
-      retention_in_days = 30
-    }
-    tracing = {
-      enabled = true
-    }
-  }
+  is_hub      = false
+  org         = local.env_vars.org
+  spoke_def   = local.spoke_vars.spoke
+  name_prefix = local.local_vars.name_prefix
+  encryption  = try(local.local_vars.encryption, {})
+  activities  = try(local.local_vars.activities, {})
+  settings    = try(local.local_vars.settings, {})
+  extra_tags  = local.tags
 }
+```
+
+## Quick Start
+
+```sh
+# 1. Create and enter the target deployment directory
+mkdir -p prod/us-east-1/001/step-function
+cd prod/us-east-1/001/step-function
+
+# 2. Scaffold the module
+terragrunt scaffold github.com/cloudopsworks/terraform-module-aws-step-function
+
+# 3. Set the required name_prefix and configure your state machine in inputs.yaml
+vi inputs.yaml
+
+# 4. Plan and apply
+terragrunt plan
+terragrunt apply
+```
+
+
+## Examples
+
+**Standard workflow with encryption and CloudWatch logging:**
+
+```yaml
+# inputs.yaml
+name_prefix: "payments"
+
+encryption:
+  create: true
+  enabled: true
+  deletion_window: 30
+  enable_key_rotation: true
+  rotation_period: 90
+
+settings:
+  is_express: false
+  publish: true
+  definition:
+    StartAt: ProcessPayment
+    States:
+      ProcessPayment:
+        Type: Task
+        Resource: "arn:aws:states:::lambda:invoke"
+        Parameters:
+          FunctionName: "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
+        End: true
+  logging:
+    enabled: true
+    level: "ERROR"
+    include_execution_data: false
+    retention_in_days: 30
+  tracing:
+    enabled: true
+  iam:
+    policy_statements:
+      - sid: "InvokeLambda"
+        effect: "Allow"
+        actions:
+          - "lambda:InvokeFunction"
+        resources:
+          - "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
+```
+
+**Express workflow with activities:**
+
+```yaml
+# inputs.yaml
+name_prefix: "streaming"
+
+activities:
+  worker_activity:
+    name_prefix: "stream-worker"
+    encryption:
+      enabled: true
+      aws_kms: false
+
+settings:
+  is_express: true
+  definition:
+    StartAt: DoWork
+    States:
+      DoWork:
+        Type: Activity
+        Resource: "arn:aws:states:us-east-1:123456789012:activity:stream-worker-001"
+        End: true
 ```
 
 
@@ -166,6 +269,7 @@ Available targets:
   help                                Help screen
   help/all                            Display help for all targets
   help/short                          This help short screen
+  init/%                              Initialize the project for a specific cloud provider: %S
   lint                                Lint terraform/opentofu code
   tag                                 Tag the current version
 
@@ -175,13 +279,13 @@ Available targets:
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.3.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.41.0 |
 
 ## Modules
 
@@ -220,7 +324,20 @@ Available targets:
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_activities"></a> [activities](#output\_activities) | Map of activity keys to their ARNs |
+| <a name="output_iam_role_arn"></a> [iam\_role\_arn](#output\_iam\_role\_arn) | ARN of the IAM execution role attached to the state machine |
+| <a name="output_iam_role_name"></a> [iam\_role\_name](#output\_iam\_role\_name) | Name of the IAM execution role attached to the state machine |
+| <a name="output_kms_alias_name"></a> [kms\_alias\_name](#output\_kms\_alias\_name) | Name of the KMS alias created for the encryption key (null if encryption.create is false) |
+| <a name="output_kms_key_arn"></a> [kms\_key\_arn](#output\_kms\_key\_arn) | ARN of the KMS key created for encryption (null if encryption.create is false) |
+| <a name="output_kms_key_id"></a> [kms\_key\_id](#output\_kms\_key\_id) | Key ID of the KMS key created for encryption (null if encryption.create is false) |
+| <a name="output_log_group_arn"></a> [log\_group\_arn](#output\_log\_group\_arn) | ARN of the CloudWatch log group for state machine logging (null if logging is disabled) |
+| <a name="output_log_group_name"></a> [log\_group\_name](#output\_log\_group\_name) | Name of the CloudWatch log group for state machine logging (null if logging is disabled) |
+| <a name="output_state_machine_arn"></a> [state\_machine\_arn](#output\_state\_machine\_arn) | ARN of the Step Function state machine |
+| <a name="output_state_machine_id"></a> [state\_machine\_id](#output\_state\_machine\_id) | ID of the Step Function state machine |
+| <a name="output_state_machine_name"></a> [state\_machine\_name](#output\_state\_machine\_name) | Name of the Step Function state machine |
+| <a name="output_state_machine_status"></a> [state\_machine\_status](#output\_state\_machine\_status) | Current status of the Step Function state machine |
 
 
 
@@ -230,10 +347,9 @@ No outputs.
 
 File a GitHub [issue](https://github.com/cloudopsworks/terraform-module-aws-step-function/issues), send us an [email][email] or join our [Slack Community][slack].
 
-[![README Commercial Support][readme_commercial_support_img]][readme_commercial_support_link]
 
 ## DevOps Tools
-
+[]()
 ## Slack Community
 
 
@@ -254,7 +370,7 @@ Please use the [issue tracker](https://github.com/cloudopsworks/terraform-module
 
 ## Copyrights
 
-Copyright © 2024-2025 [Cloud Ops Works LLC](https://cloudops.works)
+Copyright © 2024-2026 [Cloud Ops Works LLC](https://cloudops.works)
 
 
 
@@ -311,32 +427,31 @@ This project is maintained by [Cloud Ops Works LLC][website].
 [![README Footer][readme_footer_img]][readme_footer_link]
 [![Beacon][beacon]][website]
 
-  [logo]: https://cloudops.works/logo-300x69.svg
-  [docs]: https://cowk.io/docs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=docs
-  [website]: https://cowk.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=website
-  [github]: https://cowk.io/github?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=github
-  [jobs]: https://cowk.io/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=jobs
-  [hire]: https://cowk.io/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=hire
-  [slack]: https://cowk.io/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=slack
-  [linkedin]: https://cowk.io/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=linkedin
-  [twitter]: https://cowk.io/twitter?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=twitter
-  [testimonial]: https://cowk.io/leave-testimonial?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=testimonial
-  [office_hours]: https://cloudops.works/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=office_hours
-  [newsletter]: https://cowk.io/newsletter?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=newsletter
-  [email]: https://cowk.io/email?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=email
-  [commercial_support]: https://cowk.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=commercial_support
-  [we_love_open_source]: https://cowk.io/we-love-open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=we_love_open_source
-  [terraform_modules]: https://cowk.io/terraform-modules?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=terraform_modules
-  [readme_header_img]: https://cloudops.works/readme/header/img
-  [readme_header_link]: https://cloudops.works/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_header_link
-  [readme_footer_img]: https://cloudops.works/readme/footer/img
-  [readme_footer_link]: https://cloudops.works/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_footer_link
-  [readme_commercial_support_img]: https://cloudops.works/readme/commercial-support/img
-  [readme_commercial_support_link]: https://cloudops.works/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_commercial_support_link
-  [share_twitter]: https://twitter.com/intent/tweet/?text=Terraform+AWS+Step+Function+Module&url=https://github.com/cloudopsworks/terraform-module-aws-step-function
+  [logo]: https://cloudopsworks.co/images/main-logo.png
+  [docs]: https://cloudopsworks.co/resources?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=docs
+  [website]: https://cloudopsworks.co?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=website
+  [github]: https://cloudopsworks.co/github?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=github
+  [jobs]: https://cloudopsworks.co/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=jobs
+  [hire]: https://cloudopsworks.co/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=hire
+  [slack]: https://cloudopsworks.co/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=slack
+  [linkedin]: https://cloudopsworks.co/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=linkedin
+  [x]: https://cloudopsworks.co/x?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=x
+  [testimonial]: https://cloudopsworks.co/case-studies?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=testimonial
+  [office_hours]: https://cloudopsworks.co/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=office_hours
+  [newsletter]: https://cloudopsworks.co/resources?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=newsletter
+  [email]: https://cloudopsworks.co/contact?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=email
+  [commercial_support]: https://cloudopsworks.co/services?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=commercial_support
+  [we_love_open_source]: https://cloudopsworks.co/open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=we_love_open_source
+  [terraform_modules]: https://cloudopsworks.co/open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=terraform_modules
+  [readme_header_img]: https://cloudopsworks.co/images/readme-header.png
+  [readme_header_link]: https://cloudopsworks.co/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_header_link
+  [readme_footer_img]: https://cloudopsworks.co/images/main-logo-footer.png
+  [readme_footer_link]: https://cloudopsworks.co/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_footer_link
+  [readme_commercial_support_img]: https://cloudopsworks.co/readme/commercial-support/img
+  [readme_commercial_support_link]: https://cloudopsworks.co/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-step-function&utm_content=readme_commercial_support_link
+  [share_twitter]: https://x.com/intent/tweet/?text=Terraform+AWS+Step+Function+Module&url=https://github.com/cloudopsworks/terraform-module-aws-step-function
   [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AWS+Step+Function+Module&url=https://github.com/cloudopsworks/terraform-module-aws-step-function
   [share_reddit]: https://reddit.com/submit/?url=https://github.com/cloudopsworks/terraform-module-aws-step-function
   [share_facebook]: https://facebook.com/sharer/sharer.php?u=https://github.com/cloudopsworks/terraform-module-aws-step-function
-  [share_googleplus]: https://plus.google.com/share?url=https://github.com/cloudopsworks/terraform-module-aws-step-function
   [share_email]: mailto:?subject=Terraform+AWS+Step+Function+Module&body=https://github.com/cloudopsworks/terraform-module-aws-step-function
-  [beacon]: https://ga-beacon.cloudops.works/G-7XWMFVFXZT/cloudopsworks/terraform-module-aws-step-function?pixel&cs=github&cm=readme&an=terraform-module-aws-step-function
+  [beacon]: https://ga-beacon.cloudospworks.co/G-QMZVYYN2VN/cloudopsworks/terraform-module-aws-step-function?pixel&cs=github&cm=readme&an=terraform-module-aws-step-function
