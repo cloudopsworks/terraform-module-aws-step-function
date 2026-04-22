@@ -8,23 +8,14 @@
 #
 
 locals {
-  sfn_name = format("%s-%s", var.name_prefix, local.system_name_short)
-}
-
-resource "aws_kms_key" "this" {
-  count                   = var.encryption.create ? 1 : 0
-  description             = "KMS Key for Step Function Activities"
-  deletion_window_in_days = var.encryption.deletion_window
-  enable_key_rotation     = var.encryption.enable_key_rotation
-  rotation_period_in_days = var.encryption.rotation_period
-  is_enabled              = var.encryption.enabled
-  tags                    = local.all_tags
-}
-
-resource "aws_kms_alias" "this" {
-  count         = var.encryption.create ? 1 : 0
-  target_key_id = aws_kms_key.this[0].arn
-  name          = format("alias/sfn/%s-%s", var.name_prefix, local.system_name_short)
+  sfn_name       = format("%s-%s", var.name_prefix, local.system_name_short)
+  definition_src = try(jsonencode(var.settings.definition), var.settings.definition)
+  definition = templatestring(local.definition_src, {
+    lambda = {
+      for key, lambda_name in try(var.settings.lambdas, {}) :
+      key => data.aws_lambda_function.lambda[key].arn
+    }
+  })
 }
 
 resource "aws_sfn_activity" "this" {
@@ -49,7 +40,7 @@ resource "aws_sfn_state_machine" "this" {
   type       = try(var.settings.is_express, false) ? "EXPRESS" : "STANDARD"
   role_arn   = aws_iam_role.this.arn
   publish    = try(var.settings.publish, null)
-  definition = try(jsonencode(var.settings.definition), var.settings.definition)
+  definition = local.definition
   dynamic "encryption_configuration" {
     for_each = var.encryption.create ? [1] : []
     content {

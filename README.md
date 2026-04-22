@@ -50,6 +50,7 @@ This Terraform module provides comprehensive management of AWS Step Functions, i
 - **Activities**: Create Step Function activities with optional per-activity KMS encryption.
 - **IAM**: Automatically creates a scoped IAM execution role with optional additional inline policy statements.
 - **KMS Encryption**: Optionally creates a Customer Managed KMS key shared by the state machine and activities.
+- **Lambda Integration**: Dynamically resolves Lambda function ARNs by name and injects them as `${lambda.<key>}` template variables in the state machine definition, with automatic `lambda:InvokeFunction` IAM policy generation.
 - **CloudWatch Logging**: Configures a dedicated log group with configurable retention and log verbosity.
 - **X-Ray Tracing**: Enables distributed tracing for state machine executions.
 
@@ -115,6 +116,8 @@ activities: {}
 #     retention_in_days: 90         # (Optional) Log retention in days. Default: 90
 #   tracing:
 #     enabled: false                # (Optional) Enable X-Ray tracing. Default: false
+#   lambdas:                        # (Optional) Map of logical key to Lambda function name for dynamic ARN resolution. Default: {}
+#     my_lambda: "my-function-name" # Key is used as ${lambda.my_lambda} in the definition template; auto-generates lambda:InvokeFunction IAM policy.
 #   iam:
 #     policy_statements:            # (Optional) Additional inline IAM policy statements
 #       - sid: "StatementID"
@@ -194,7 +197,7 @@ terragrunt apply
 
 ## Examples
 
-**Standard workflow with encryption and CloudWatch logging:**
+**Standard workflow with encryption, CloudWatch logging, and dynamic Lambda ARN resolution:**
 
 ```yaml
 # inputs.yaml
@@ -210,6 +213,8 @@ encryption:
 settings:
   is_express: false
   publish: true
+  lambdas:
+    process_payment: "process-payment"   # resolves to ARN → ${lambda.process_payment} in definition
   definition:
     StartAt: ProcessPayment
     States:
@@ -217,7 +222,7 @@ settings:
         Type: Task
         Resource: "arn:aws:states:::lambda:invoke"
         Parameters:
-          FunctionName: "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
+          FunctionName: "${lambda.process_payment}"
         End: true
   logging:
     enabled: true
@@ -226,14 +231,6 @@ settings:
     retention_in_days: 30
   tracing:
     enabled: true
-  iam:
-    policy_statements:
-      - sid: "InvokeLambda"
-        effect: "Allow"
-        actions:
-          - "lambda:InvokeFunction"
-        resources:
-          - "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
 ```
 
 **Express workflow with activities:**
@@ -285,7 +282,7 @@ Available targets:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.35 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.41.0 |
 
 ## Modules
 
@@ -299,6 +296,8 @@ Available targets:
 |------|------|
 | [aws_cloudwatch_log_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_iam_role.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role_policy.cloudwatch](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_iam_role_policy.lambda_invoke](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_iam_role_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
 | [aws_kms_alias.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_alias) | resource |
 | [aws_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_key) | resource |
@@ -306,7 +305,12 @@ Available targets:
 | [aws_sfn_state_machine.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sfn_state_machine) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.assume_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.kms_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.lambda_invoke_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.sfn_cloudwatch_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.sfn_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_session_context.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_session_context) | data source |
+| [aws_lambda_function.lambda](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lambda_function) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs

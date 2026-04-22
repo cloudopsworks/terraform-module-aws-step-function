@@ -52,6 +52,8 @@ variable "encryption" {
 #     retention_in_days: 90 # (optional) CloudWatch log group retention in days, default is 90
 #   tracing:
 #     enabled: true | false # (optional) Enable AWS X-Ray tracing for state machine executions. default is false
+#   lambdas: # (optional) map of logical key -> Lambda function name for dynamic ARN resolution in the definition template
+#     key: "my-function-name" # (optional) Lambda function name; resolves to ARN injected as ${lambda.key} in the definition template; also auto-generates lambda:InvokeFunction IAM policy
 #   iam:
 #     policy_statements: # (optional) list of IAM policy statements to attach to the Step Function role
 #       - sid: "StatementID" # (optional) unique identifier for the statement
