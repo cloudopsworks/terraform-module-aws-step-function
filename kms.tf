@@ -13,6 +13,7 @@ data "aws_iam_session_context" "current" {
 
 data "aws_iam_policy_document" "kms_policy" {
   count = var.encryption.create ? 1 : 0
+  id = "KMSKeyPolicy"
   statement {
     sid    = "AllowRootUserFullAccess"
     effect = "Allow"
