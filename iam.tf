@@ -85,6 +85,13 @@ resource "aws_iam_role_policy" "this" {
   policy = data.aws_iam_policy_document.sfn_policy[0].json
 }
 
+resource "aws_iam_role_policy" "this" {
+  count = length(try(var.settings.lambdas, [])) > 0 ? 1 : 0
+  name   = "StepFunctionLambdaInvokePolicy"
+  role   = aws_iam_role.this.id
+  policy = data.aws_iam_policy_document.lambda_invoke_policy[0].json
+}
+
 data "aws_iam_policy_document" "sfn_cloudwatch_policy" {
   count = try(var.settings.logging.enabled, false) ? 1 : 0
 
