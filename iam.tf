@@ -70,3 +70,45 @@ resource "aws_iam_role_policy" "this" {
   role   = aws_iam_role.this.id
   policy = data.aws_iam_policy_document.sfn_policy[0].json
 }
+
+data "aws_iam_policy_document" "sfn_cloudwatch_policy" {
+  count = try(var.settings.logging.enabled, false) ? 1 : 0
+
+  # Log delivery control-plane actions require * resource per AWS documentation
+  statement {
+    sid    = "CloudWatchLogDelivery"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogDelivery",
+      "logs:GetLogDelivery",
+      "logs:UpdateLogDelivery",
+      "logs:DeleteLogDelivery",
+      "logs:ListLogDeliveries",
+      "logs:PutResourcePolicy",
+      "logs:DescribeResourcePolicies",
+      "logs:DescribeLogGroups",
+    ]
+    resources = ["*"]
+  }
+
+  # Log write actions scoped to the module-managed log group
+  statement {
+    sid    = "CloudWatchLogWrite"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:PutLogEvents",
+    ]
+    resources = [
+      aws_cloudwatch_log_group.this[0].arn,
+      "${aws_cloudwatch_log_group.this[0].arn}:*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "cloudwatch" {
+  count  = try(var.settings.logging.enabled, false) ? 1 : 0
+  name   = "StepFunctionCloudWatchPolicy"
+  role   = aws_iam_role.this.id
+  policy = data.aws_iam_policy_document.sfn_cloudwatch_policy[0].json
+}
