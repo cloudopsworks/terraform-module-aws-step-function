@@ -49,7 +49,7 @@ resource "aws_sfn_state_machine" "this" {
   type       = try(var.settings.is_express, false) ? "EXPRESS" : "STANDARD"
   role_arn   = aws_iam_role.this.arn
   publish    = try(var.settings.publish, null)
-  definition = try(yamlencode(var.settings.definition), var.settings.definition)
+  definition = try(jsonencode(var.settings.definition), var.settings.definition)
   dynamic "encryption_configuration" {
     for_each = var.encryption.create ? [1] : []
     content {
