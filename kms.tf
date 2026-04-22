@@ -14,7 +14,7 @@ data "aws_iam_session_context" "current" {
 data "aws_iam_policy_document" "kms_policy" {
   count = var.encryption.create ? 1 : 0
   statement {
-    sid = "AllowRootUserFullAccess"
+    sid    = "AllowRootUserFullAccess"
     effect = "Allow"
     actions = [
       "kms:*"
@@ -58,6 +58,7 @@ resource "aws_kms_key" "this" {
   enable_key_rotation     = var.encryption.enable_key_rotation
   rotation_period_in_days = var.encryption.rotation_period
   is_enabled              = var.encryption.enabled
+  policy                  = data.aws_iam_policy_document.kms_policy[0].json
   tags                    = local.all_tags
 }
 
