@@ -11,22 +11,6 @@ locals {
   sfn_name = format("%s-%s", var.name_prefix, local.system_name_short)
 }
 
-resource "aws_kms_key" "this" {
-  count                   = var.encryption.create ? 1 : 0
-  description             = "KMS Key for Step Function Activities"
-  deletion_window_in_days = var.encryption.deletion_window
-  enable_key_rotation     = var.encryption.enable_key_rotation
-  rotation_period_in_days = var.encryption.rotation_period
-  is_enabled              = var.encryption.enabled
-  tags                    = local.all_tags
-}
-
-resource "aws_kms_alias" "this" {
-  count         = var.encryption.create ? 1 : 0
-  target_key_id = aws_kms_key.this[0].arn
-  name          = format("alias/sfn/%s-%s", var.name_prefix, local.system_name_short)
-}
-
 resource "aws_sfn_activity" "this" {
   for_each = var.activities
   name     = try(each.value.name, format("%s-%s", each.value.name_prefix, local.system_name_short))
