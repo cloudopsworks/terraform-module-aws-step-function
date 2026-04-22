@@ -8,7 +8,14 @@
 #
 
 locals {
-  sfn_name = format("%s-%s", var.name_prefix, local.system_name_short)
+  sfn_name       = format("%s-%s", var.name_prefix, local.system_name_short)
+  definition_src = try(jsonencode(var.settings.definition), var.settings.definition)
+  definition = templatestring(local.definition_src, {
+    lambda = {
+      for key, lambda_name in try(var.settings.lambdas, {}) :
+      key => data.aws_lambda_function.lambda[key].arn
+    }
+  })
 }
 
 resource "aws_sfn_activity" "this" {
@@ -33,7 +40,7 @@ resource "aws_sfn_state_machine" "this" {
   type       = try(var.settings.is_express, false) ? "EXPRESS" : "STANDARD"
   role_arn   = aws_iam_role.this.arn
   publish    = try(var.settings.publish, null)
-  definition = try(jsonencode(var.settings.definition), var.settings.definition)
+  definition = local.definition
   dynamic "encryption_configuration" {
     for_each = var.encryption.create ? [1] : []
     content {

@@ -37,6 +37,20 @@ data "aws_iam_policy_document" "assume_role_policy" {
   }
 }
 
+data "aws_iam_policy_document" "lambda_invoke_policy" {
+  count = length(try(var.settings.lambdas, [])) > 0 ? 1 : 0
+  statement {
+    sid    = "LambdaInvokePermission"
+    effect = "Allow"
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+    resources = [
+      for key, lambda_name in try(var.settings.lambdas, {}) : data.aws_lambda_function.lambda[key].arn
+    ]
+  }
+}
+
 data "aws_iam_policy_document" "sfn_policy" {
   count = length(try(var.settings.iam.policy_statements, [])) > 0 ? 1 : 0
   dynamic "statement" {
