@@ -28,6 +28,7 @@ introduction: |-
   - **Activities**: Create Step Function activities with optional per-activity KMS encryption.
   - **IAM**: Automatically creates a scoped IAM execution role with optional additional inline policy statements.
   - **KMS Encryption**: Optionally creates a Customer Managed KMS key shared by the state machine and activities.
+  - **Lambda Integration**: Dynamically resolves Lambda function ARNs by name and injects them as `${lambda.<key>}` template variables in the state machine definition, with automatic `lambda:InvokeFunction` IAM policy generation.
   - **CloudWatch Logging**: Configures a dedicated log group with configurable retention and log verbosity.
   - **X-Ray Tracing**: Enables distributed tracing for state machine executions.
 
@@ -87,6 +88,8 @@ usage: |-
   #     retention_in_days: 90         # (Optional) Log retention in days. Default: 90
   #   tracing:
   #     enabled: false                # (Optional) Enable X-Ray tracing. Default: false
+  #   lambdas:                        # (Optional) Map of logical key to Lambda function name for dynamic ARN resolution. Default: {}
+  #     my_lambda: "my-function-name" # Key is used as ${lambda.my_lambda} in the definition template; auto-generates lambda:InvokeFunction IAM policy.
   #   iam:
   #     policy_statements:            # (Optional) Additional inline IAM policy statements
   #       - sid: "StatementID"
@@ -146,7 +149,7 @@ usage: |-
   ```
 
 examples: |-
-  **Standard workflow with encryption and CloudWatch logging:**
+  **Standard workflow with encryption, CloudWatch logging, and dynamic Lambda ARN resolution:**
 
   ```yaml
   # inputs.yaml
@@ -162,6 +165,8 @@ examples: |-
   settings:
     is_express: false
     publish: true
+    lambdas:
+      process_payment: "process-payment"   # resolves to ARN → ${lambda.process_payment} in definition
     definition:
       StartAt: ProcessPayment
       States:
@@ -169,7 +174,7 @@ examples: |-
           Type: Task
           Resource: "arn:aws:states:::lambda:invoke"
           Parameters:
-            FunctionName: "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
+            FunctionName: "${lambda.process_payment}"
           End: true
     logging:
       enabled: true
@@ -178,14 +183,6 @@ examples: |-
       retention_in_days: 30
     tracing:
       enabled: true
-    iam:
-      policy_statements:
-        - sid: "InvokeLambda"
-          effect: "Allow"
-          actions:
-            - "lambda:InvokeFunction"
-          resources:
-            - "arn:aws:lambda:us-east-1:123456789012:function:process-payment"
   ```
 
   **Express workflow with activities:**

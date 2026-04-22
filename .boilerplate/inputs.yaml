@@ -34,6 +34,8 @@ activities: {}
 #     retention_in_days: 90         # (Optional) CloudWatch log group retention period in days. Default: 90
 #   tracing:
 #     enabled: false                # (Optional) Enable AWS X-Ray tracing for executions. Default: false
+#   lambdas:                        # (Optional) Map of logical key to Lambda function name for dynamic ARN resolution. Default: {}
+#     my_lambda: "my-function-name" # (Optional) Lambda function name; resolves to ARN injected as ${lambda.my_lambda} in the definition template. Also auto-generates lambda:InvokeFunction IAM policy.
 #   iam:
 #     policy_statements:            # (Optional) Additional inline IAM policy statements for the execution role.
 #       - sid: "StatementID"        # (Optional) Unique statement identifier
