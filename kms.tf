@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "kms_policy" {
       type = "AWS"
     }
     resources = [
-      aws_kms_key.this[0].arn
+      "*"
     ]
   }
 }
