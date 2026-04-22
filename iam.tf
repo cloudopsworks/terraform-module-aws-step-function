@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "this" {
   policy = data.aws_iam_policy_document.sfn_policy[0].json
 }
 
-resource "aws_iam_role_policy" "this" {
+resource "aws_iam_role_policy" "lambda_invoke" {
   count = length(try(var.settings.lambdas, [])) > 0 ? 1 : 0
   name   = "StepFunctionLambdaInvokePolicy"
   role   = aws_iam_role.this.id
