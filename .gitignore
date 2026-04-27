@@ -38,5 +38,6 @@ provider.temp.tf
 .claude/
 .ai/
 .omc/
+.omx/
 .gstack/
 .opencode/
